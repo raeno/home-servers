@@ -1,0 +1,13 @@
+---
+# This is very useful.  Basically translates to "run apt-get update" on the target
+- name: Regenerate apt-cache
+  apt: update_cache=yes
+
+- include: nvidia.yml
+  when: has_nvidia_gpu
+    
+- name: Install basic packages
+  apt: pkg={{item}} state=installed 
+  with_items:
+    - vim
+    - htop

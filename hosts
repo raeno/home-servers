@@ -1,0 +1,5 @@
+[media-server]
+192.168.0.201:1731 ansible_ssh_user=raeno ansible_user=raeno
+
+[home-server]
+192.168.0.200:1730 ansible_ssh_user=raeno ansible_user=raeno
