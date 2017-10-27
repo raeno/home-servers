@@ -1,0 +1,24 @@
+# create main user account
+- name: Set main user account
+  user: name={{main_user}} password={{main_user_password}} shell=/bin/bash groups=sudo append=yes state=present
+
+- name: Create tmp folder under deploy home
+  file: path=/home/{{main_user}}/tmp owner={{main_user}} group={{main_user}} mode=700 state=directory
+
+- name: create .ssh directory
+  file: path=/home/{{main_user}}/.ssh owner={{main_user}} group={{main_user}} mode=700 state=directory
+
+# This generates a ssh-key noninteractively.
+- name: generate a  ssh-key for the main_user
+  shell: ssh-keygen -t rsa -N "" -f /home/{{main_user}}/.ssh/id_rsa -q creates=/home/{{main_user}}/.ssh/id_rsa
+
+# This is a way to drop an authorized_keys file into the main_user's ssh directory, to make logging in easier.
+- name: deploy access ssh-key to user's authorized keys file
+  copy: src=authorized_keys dest=/home/{{main_user}}/.ssh/authorized_keys
+
+- name: Disallow password authentication
+  lineinfile: dest=/etc/ssh/sshd_config
+              regexp="^PasswordAuthentication"
+              line="PasswordAuthentication no"
+              state=present
+  notify: Restart ssh

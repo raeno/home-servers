@@ -1,0 +1,5 @@
+- name: set hostname
+  shell: /bin/hostname -F /etc/hostname
+
+- name: Restart ssh
+  service: name=ssh state=restarted

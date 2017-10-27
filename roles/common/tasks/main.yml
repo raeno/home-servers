@@ -1,13 +1,47 @@
 ---
 # This is very useful.  Basically translates to "run apt-get update" on the target
 - name: Regenerate apt-cache
-  apt: update_cache=yes
+  apt: 
+    update_cache: yes
+  become: true
 
-- include: nvidia.yml
-  when: has_nvidia_gpu
-    
+- name: Update all packages to the latest version
+  apt:
+    upgrade: dist
+  become: true
+
 - name: Install basic packages
-  apt: pkg={{item}} state=installed 
+  apt: 
+    pkg: "{{item}}"
+    state: installed 
+  become: true
   with_items:
     - vim
+    - git
+    - curl
+    - libcurl3
+    - libssl1.0.0
     - htop
+    - mosh
+    - docker
+    - python-pip
+    - python-software-properties
+    - ufw
+    - fail2ban
+    - unattended-upgrades
+    - supervisor
+    - logwatch
+
+# configure unattended-upgrades
+- name: Adjust APT update intervals
+  copy: src=apt_periodic dest=/etc/apt/apt.conf.d/10periodic
+
+# This deploys a sane (reasonably so) config for supervisord
+- name: Deploy supervisord.conf
+  template: src=supervisord.conf.j2 dest=/etc/supervisor/supervisord.conf owner=root group=root mode=644
+
+- name: Install python packages
+  pip:
+    name: docker-py
+
+- include: security.yml

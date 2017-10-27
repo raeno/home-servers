@@ -1,0 +1,4 @@
+---
+dependencies:
+  - { role: external/DavidWittman.redis, redis_bind: 127.0.0.1, become: true }
+  - { role: external/zzet.rbenv }

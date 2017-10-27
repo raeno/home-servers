@@ -1,9 +1,6 @@
 ---
-- name: Configure home media server ( xbmc, limelight, etc )
+- name: Configure home server
   hosts: home-server
-  sudo: true
   roles:
     - common
     - dev
-      
-    

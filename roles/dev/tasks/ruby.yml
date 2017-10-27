@@ -1,0 +1,46 @@
+- name: Adds rbenv group to allow different users to access system-wide rbenv
+  group: name=rbenv state=present
+  tags:
+    - rbenv
+
+- name: Adds ruby users to rbenv group
+  user: user={{item}} groups='rbenv' append=true
+  with_items: rbenv_users
+  sudo: true
+  tags:
+    - rbenv
+
+- name: Give 'rbenv' group permissions over rbenv folder
+  file: path=/usr/local/rbenv group=rbenv mode=0774 state=directory recurse=true
+  sudo: true
+  tags:
+    - rbenv
+
+- name: install some packages important to build some ruby gems
+  apt:
+    pkg: "{{item}}"
+    state: installed
+  with_items:
+    - autoconf
+    - bison
+    - libssl-dev
+    - libyaml-dev
+    - libreadline6-dev
+    - zlib1g-dev
+    - libncurses5-dev
+    - libffi-dev
+    - libgdbm3
+    - libgdbm-dev
+    - nodejs
+    - npm
+
+- name: Install some important gems
+  command: bash -lc "gem install {{item}}"
+  become: true
+  with_items:
+    - bundler
+    - specific_install
+    - pry
+    - tlsmail
+  tags:
+    - gems
