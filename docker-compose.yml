@@ -1,0 +1,127 @@
+version: '3'
+volumes:
+  nextcloud-data:
+    driver:
+      local-persist
+    driver_opts:
+      mountpoint: /home/raeno/filestack
+  db-data:
+  books:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /home/raeno/books
+services:
+  nginx-proxy:
+    build:
+      context: .
+      dockerfile: nginx-proxy.Dockerfile
+    ports:
+      - 80:80
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+  db:
+    image: postgres
+    ports:
+      - 5432:5432
+    restart: always
+    env_file:
+      db.env
+    volumes:
+      - db-data:/var/lib/postgresql/data
+  transmission:
+    image: linuxserver/transmission:latest
+    ports:
+      - 9091:9091
+    environment:
+      - PUID=1001
+      - PGID=1002
+      - VIRTUAL_PORT=9091
+      - VIRTUAL_HOST=torrent.mishki.ninja
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /home/raeno/media/downloads:/downloads
+      - /home/raeno/torrents:/watch
+      - ./config/transmission:/config
+  plex:
+    image: plexinc/pms-docker
+    container_name: plex
+    ports:
+      - 32400:32400/tcp
+      - 3005:3005/tcp
+      - 8324:8324/tcp
+      - 32469:32469/tcp
+      - 1900:1900/udp
+      - 32410:32410/udp
+      - 32412:32412/udp
+      - 32413:32413/udp
+      - 32414:32414/udp
+    volumes:
+      - /home/raeno/media:/data/media
+      - /etc/localtime:/etc/localtime:ro
+      - ./config/plex:/config
+    restart: always
+    depends_on:
+      - sonarr
+      - transmission
+    environment:
+      - TZ=MSK
+      - VIRTUAL_PORT=32400
+      - VIRTUAL_HOST=media.mishki.ninja
+      - VERSION=latest
+      - PGID=1002
+      - PUID=1001
+  dashboard:
+    image: chimpchimp/manage-this-node
+    container_name: dashboard
+    ports:
+      - 3000:3000
+    volumes:
+      - ./config/dashboard:/config
+    restart: always
+    environment:
+      - VIRTUAL_PORT=3000
+      - VIRTUAL_HOST=dashboard.mishki.ninja
+  nextcloud:
+    image: nextcloud:apache
+    ports:
+      - 8080:80
+    restart: always
+    volumes:
+      - nextcloud-data:/var/www/html
+    environment:
+      - VIRTUAL_PORT=8080
+      - VIRTUAL_HOST=files.mishki.ninja
+      - POSTGRES_HOST=db
+      - PUID=1001
+      - PGID=1002
+    depends_on:
+      - db
+    env_file:
+      - db.env
+  sonarr:
+    image: linuxserver/sonarr
+    ports:
+      - 8989:8989
+    environment:
+      - PGID=1002
+      - PUID=1001
+      - TZ=MSK
+      - VIRTUAL_PORT=8989
+      - VIRTUAL_HOST=sonarr.mishki.ninja
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /dev/rtc:/dev/rtc:ro
+      - /home/raeno/media/tv_shows:/tv
+      - /home/raeno/media/downloads:/downloads
+      - ./config/sonarr:/config
+    depends_on:
+      - transmission
+
+  jackett:
+    image: linuxserver/jackett:latest
+    volumes:
+      - ./config/jackett:/config
+      - /home/raeno/media/downloads:/downloads
+    environment:
+      - PUID=1001
+      - PGID=1002
